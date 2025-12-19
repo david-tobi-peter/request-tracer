@@ -1,6 +1,6 @@
 export type TimingMs = number;
 
-type IPFamily = "ipv4" | "ipv6";
+export type IPFamily = "ipv4" | "ipv6";
 
 export interface DNSResult {
   time: TimingMs;
