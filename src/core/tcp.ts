@@ -1,43 +1,43 @@
-import { TCPResult, toMs } from "@/shared";
+import { measureTime, TCPResult } from "@/shared";
 import net from "net";
 
 export class TCPConnector {
   async connect(host: string, port: number, timeoutMs: number): Promise<TCPResult> {
-    return new Promise((resolve, reject) => {
-      const start = process.hrtime.bigint();
-      const socket = net.connect({ host, port });
+    let socket: net.Socket;
 
-      let isSettled = false;
+    const { result: tcpSocket, timeMs } = await measureTime(() =>
+      new Promise<net.Socket>((resolve, reject) => {
+        let isSettled = false;
 
-      socket.once("connect", () => {
-        if (isSettled) return;
-        isSettled = true;
+        socket = net.connect({ host, port });
 
-        const end = process.hrtime.bigint();
-
-        resolve({
-          time: toMs(end - start),
-          localPort: socket.localPort!,
-          remotePort: socket.remotePort!,
-          socket,
+        socket.once("connect", () => {
+          if (isSettled) return;
+          isSettled = true;
+          resolve(socket);
         });
-      });
 
-      socket.once("error", (err) => {
-        if (isSettled) return;
-        isSettled = true;
-        socket.destroy();
+        socket.once("error", (err) => {
+          if (isSettled) return;
+          isSettled = true;
+          socket.destroy();
+          reject(new Error(`TCP connection failed: ${err.message}`));
+        });
 
-        reject(new Error(`TCP connection failed: ${err.message}`));
-      });
+        socket.setTimeout(timeoutMs, () => {
+          if (isSettled) return;
+          isSettled = true;
+          socket.destroy();
+          reject(new Error("TCP connection timeout"));
+        });
+      })
+    );
 
-      socket.setTimeout(timeoutMs, () => {
-        if (isSettled) return;
-        isSettled = true;
-        socket.destroy();
-
-        reject(new Error("TCP connection timeout"));
-      });
-    })
+    return {
+      time: timeMs,
+      localPort: tcpSocket.localPort!,
+      remotePort: tcpSocket.remotePort!,
+      socket: tcpSocket,
+    };
   }
 }

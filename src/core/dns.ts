@@ -1,18 +1,15 @@
-import { DNSResult, IPFamily, toMs } from "@/shared";
+import { DNSResult, IPFamily, measureTime } from "@/shared";
 import dns from "dns/promises";
 
 export class DNSResolver {
   async resolve(hostname: string): Promise<DNSResult> {
-    const start = process.hrtime.bigint();
-
     try {
-      const result = await dns.lookup(hostname);
-      const end = process.hrtime.bigint();
+      const { result: lookupAddress, timeMs } = await measureTime(() => dns.lookup(hostname));
 
       return {
-        time: toMs(end - start),
-        address: result.address,
-        family: this.mapIPFamily(result.family),
+        time: timeMs,
+        address: lookupAddress.address,
+        family: this.mapIPFamily(lookupAddress.family),
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
