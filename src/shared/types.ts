@@ -28,7 +28,7 @@ export interface TLSResult {
 export interface HTTPResult {
   ttfb: TimingMs;
   download: TimingMs;
-  statusCode: number;
+  statusCode: number | string;
   statusMessage: string;
   httpVersion: string;
   headers: Record<string, string | string[]>;

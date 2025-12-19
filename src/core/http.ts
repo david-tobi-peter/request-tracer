@@ -55,7 +55,7 @@ export class HTTPClient {
     return {
       ttfb,
       download,
-      statusCode: ttfbRes.statusCode || 0,
+      statusCode: ttfbRes.statusCode || "unknown",
       statusMessage: ttfbRes.statusMessage || "",
       httpVersion: ttfbRes.httpVersion,
       headers: ttfbRes.headers as Record<string, string | string[]>,
