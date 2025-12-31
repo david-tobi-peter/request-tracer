@@ -8,7 +8,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node ./dist/bin/tracer.js",
-    "tracer": "tsx src/bin/tracer.ts"
+    "tracer": "tsx src/cli/main.ts"
   },
   "devDependencies": {
     "@types/node": "^25.0.3",

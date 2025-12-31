@@ -43,9 +43,3 @@ export interface TraceResult {
   http: HTTPResult;
   totalTime: TimingMs;
 }
-
-export interface TraceOptions {
-  explain: boolean;
-  verbose: boolean;
-  timeoutMs: number;
-}

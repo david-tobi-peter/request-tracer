@@ -4,7 +4,7 @@ import { TLSHandShaker } from "./tls";
 import { HTTPClient } from "./http";
 import type net from "net";
 import type tls from "tls";
-import type { TraceResult, TraceOptions } from "@/shared";
+import type { TraceResult } from "@/shared";
 
 export class RequestTracer {
   private dns = new DNSResolver();
@@ -14,7 +14,7 @@ export class RequestTracer {
 
   async trace(
     url: string,
-    options: TraceOptions
+    timeoutMs: number
   ): Promise<TraceResult> {
     const target = new URL(url);
 
@@ -23,39 +23,33 @@ export class RequestTracer {
       return target.protocol === "https:" ? 443 : 80;
     })();
 
-
-    // --- DNS ---
     const dnsResult = await this.dns.resolve(target.hostname);
 
-    // --- TCP ---
     const tcpResult = await this.tcp.connect(
       dnsResult.address,
       port,
-      options.timeoutMs
+      timeoutMs
     );
 
     let activeSocket: net.Socket | tls.TLSSocket = tcpResult.socket;
     let tlsResult: TraceResult["tls"];
 
-    // --- TLS (HTTPS only) ---
     if (target.protocol === "https:") {
       tlsResult = await this.tls.handshake(
         { socket: tcpResult.socket },
         target.hostname,
-        options.timeoutMs
+        timeoutMs
       );
 
       activeSocket = tlsResult.socket;
     }
 
-    // --- HTTP ---
     const httpResult = await this.http.request(
       target.href,
       { socket: activeSocket },
-      options.timeoutMs
+      timeoutMs
     );
 
-    // --- Total Time ---
     const totalTime =
       dnsResult.time +
       tcpResult.time +
