@@ -139,18 +139,6 @@ interface ITraceResult {
 
 ---
 
-## Development
-
-```bash
-# Build project
-npm run build
-
-# Run CLI with tsx
-npm run tracer -- --url https://example.com
-```
-
----
-
 ## License
 
 MIT License – see [LICENSE](./license)
