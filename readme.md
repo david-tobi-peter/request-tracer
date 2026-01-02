@@ -40,10 +40,10 @@ If your project uses CommonJS, you need to migrate to ESM:
 
 ```bash
 # Using npm
-npm install -g request-tracer
+npm install -g @david-tobi-peter/request-tracer
 
 # Or local project
-npm install request-tracer
+npm install @david-tobi-peter/request-tracer
 ````
 
 ---
@@ -54,10 +54,10 @@ npm install request-tracer
 
 ```bash
 # Basic usage
-tracer --url https://example.com
+request-tracer --url https://example.com
 
 # With timeout (ms)
-tracer --url https://example.com --timeout 5000
+request-tracer --url https://example.com --timeout 5000
 ```
 
 **Example Output:**
@@ -82,7 +82,7 @@ Total time: 159.39 ms
 ### Programmatic Usage
 
 ```ts
-import { RequestTracer, ITraceResult } from "request-tracer";
+import { RequestTracer, ITraceResult } from "@david-tobi-peter/request-tracer";
 
 const tracer = new RequestTracer();
 

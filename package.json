@@ -1,5 +1,5 @@
 {
-  "name": "request-tracer",
+  "name": "@david-tobi-peter/request-tracer",
   "version": "1.0.0",
   "description": "Low-level HTTP request tracer with DNS, TCP, TLS, and HTTP timing measurements",
   "type": "module",
