@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-import { RequestTracer } from "@/core";
-import { TraceResult } from "@/shared";
+import { RequestTracer } from "../core/request-tracer.js";
+import { ITraceResult } from "../shared/types.js";
 import process from "process";
 
-function parseArgs(): { url: string; timeoutMs: number } {
+function parseArgs(): { url: string; timeoutMs: number | undefined } {
   const args = process.argv.slice(2);
 
   if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
@@ -28,7 +28,7 @@ function parseArgs(): { url: string; timeoutMs: number } {
   }
 
   const url = (() => {
-    const raw = args[urlIndex + 1];
+    const raw = args[urlIndex + 1] as string;
     const full = raw.startsWith("http://") || raw.startsWith("https://") ? raw : `http://${raw}`;
     try {
       new URL(full);
@@ -49,7 +49,7 @@ function parseArgs(): { url: string; timeoutMs: number } {
       }
       return parsed;
     })()
-    : 3_000;
+    : undefined;
 
   return { url, timeoutMs };
 }
@@ -61,7 +61,7 @@ function formatBytes(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 }
 
-function printResult(result: TraceResult) {
+function printResult(result: ITraceResult) {
   console.log(`\nTracing: ${result.url.href}\n`);
 
   console.log(`DNS:       ${result.dns.time.toFixed(2)} ms → ${result.dns.address} (${result.dns.family})`);

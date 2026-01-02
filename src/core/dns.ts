@@ -1,15 +1,16 @@
-import { DNSResult, IPFamily, measureTime } from "@/shared";
+import { IDNSResult, IPFamilyType } from "../shared/types.js";
+import { measureTime } from "../shared/utils.js";
 import dns from "dns/promises";
 
 export class DNSResolver {
-  async resolve(hostname: string): Promise<DNSResult> {
+  async resolve(hostname: string): Promise<IDNSResult> {
     try {
       const { result: lookupAddress, timeMs } = await measureTime(() => dns.lookup(hostname));
 
       return {
         time: timeMs,
         address: lookupAddress.address,
-        family: this.mapIPFamily(lookupAddress.family),
+        family: this.mapIPFamilyType(lookupAddress.family),
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -17,7 +18,7 @@ export class DNSResolver {
     }
   }
 
-  private mapIPFamily(family: number): IPFamily {
+  private mapIPFamilyType(family: number): IPFamilyType {
     switch (family) {
       case 4: {
         return "ipv4";

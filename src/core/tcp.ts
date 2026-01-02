@@ -1,8 +1,9 @@
-import { measureTime, TCPResult } from "@/shared";
+import { ITCPResult } from "../shared/types.js";
+import { measureTime } from "../shared/utils.js";
 import net from "net";
 
 export class TCPConnector {
-  async connect(host: string, port: number, timeoutMs: number): Promise<TCPResult> {
+  async connect(host: string, port: number, timeoutMs: number): Promise<ITCPResult> {
     let socket: net.Socket;
 
     const { result: tcpSocket, timeMs } = await measureTime(() =>

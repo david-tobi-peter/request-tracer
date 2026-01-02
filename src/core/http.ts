@@ -1,4 +1,5 @@
-import { HTTPResult, measureTime } from "@/shared";
+import { IHTTPResult } from "../shared/types.js";
+import { measureTime } from "../shared/utils.js";
 import http from "http";
 import https from "https";
 import net from "net";
@@ -9,7 +10,7 @@ export class HTTPClient {
     url: string,
     socket: { socket: net.Socket | tls.TLSSocket },
     timeoutMs: number,
-  ): Promise<HTTPResult> {
+  ): Promise<IHTTPResult> {
     const target = new URL(url);
     const protocolModule = target.protocol === "https:" ? https : http;
 

@@ -1,22 +1,22 @@
-export type TimingMs = number;
+export type TimingMsType = number;
 
-export type IPFamily = "ipv4" | "ipv6";
+export type IPFamilyType = "ipv4" | "ipv6";
 
-export interface DNSResult {
-  time: TimingMs;
+export interface IDNSResult {
+  time: TimingMsType;
   address: string;
-  family: IPFamily;
+  family: IPFamilyType;
 }
 
-export interface TCPResult {
-  time: TimingMs;
+export interface ITCPResult {
+  time: TimingMsType;
   localPort: number;
   remotePort: number;
   socket: import("net").Socket;
 }
 
-export interface TLSResult {
-  time: TimingMs;
+export interface ITLSResult {
+  time: TimingMsType;
   protocol: string;
   cipher: string;
   alpn: string;
@@ -25,9 +25,9 @@ export interface TLSResult {
   socket: import("tls").TLSSocket;
 }
 
-export interface HTTPResult {
-  ttfb: TimingMs;
-  download: TimingMs;
+export interface IHTTPResult {
+  ttfb: TimingMsType;
+  download: TimingMsType;
   statusCode: number | string;
   statusMessage: string;
   httpVersion: string;
@@ -35,11 +35,11 @@ export interface HTTPResult {
   bytes: number;
 }
 
-export interface TraceResult {
+export interface ITraceResult {
   url: URL;
-  dns: DNSResult;
-  tcp: TCPResult;
-  tls?: TLSResult;
-  http: HTTPResult;
-  totalTime: TimingMs;
+  dns: IDNSResult;
+  tcp: ITCPResult;
+  tls?: ITLSResult;
+  http: IHTTPResult;
+  totalTime: TimingMsType;
 }

@@ -1,12 +1,13 @@
-import { measureTime, TLSResult } from "@/shared";
+import { ITLSResult } from "../shared/types.js";
+import { measureTime } from "../shared/utils.js";
 import tls from "tls";
 
 export class TLSHandShaker {
   async handshake(
-    tcpResult: { socket: import("net").Socket },
+    ITCPResult: { socket: import("net").Socket },
     hostname: string,
     timeoutMs: number
-  ): Promise<TLSResult> {
+  ): Promise<ITLSResult> {
     let tlsSocket: tls.TLSSocket;
 
     const { result: socket, timeMs } = await measureTime(() =>
@@ -14,7 +15,7 @@ export class TLSHandShaker {
         let isSettled = false;
 
         tlsSocket = tls.connect({
-          socket: tcpResult.socket,
+          socket: ITCPResult.socket,
           servername: hostname,
           timeout: timeoutMs,
         });
