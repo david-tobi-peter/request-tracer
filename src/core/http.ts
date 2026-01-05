@@ -55,7 +55,10 @@ export class HTTPClient {
           bytesReceived += chunk.length;
         });
 
-        ttfbRes.on("end", () => resolve());
+        ttfbRes.on("end", () => {
+          socket.socket.destroy();
+          resolve();
+        });
       })
     );
 

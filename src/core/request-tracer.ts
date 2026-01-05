@@ -37,7 +37,7 @@ export class RequestTracer {
 
     if (target.protocol === "https:") {
       tlsResult = await this.tls.handshake(
-        { socket: tcpResult.socket },
+        { socket: activeSocket },
         target.hostname,
         timeoutMs
       );
