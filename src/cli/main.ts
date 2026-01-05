@@ -1,68 +1,93 @@
 #!/usr/bin/env node
 
 import { RequestTracer } from "../core/request-tracer.js";
-import { ITraceResult } from "../shared/types.js";
+import { ITraceResult, IParsedArgs, HTTPMethodType } from "../shared/types.js";
 import process from "process";
+import yargs from "yargs";
+import { hideBin } from "yargs/helpers";
+import { formatBytes, parseHeaders } from "../shared/utils.js";
 
-function parseArgs(): { url: string; timeoutMs: number | undefined } {
-  const args = process.argv.slice(2);
+function parseArgs(): IParsedArgs {
+  const argv = yargs(hideBin(process.argv))
+    .scriptName("request-tracer")
+    .usage("Usage: $0 --url <url> [options]")
+    .option("url", {
+      type: "string",
+      describe: "URL to trace",
+      demandOption: true,
+    })
+    .option("timeout", {
+      type: "number",
+      describe: "Request timeout in milliseconds",
+      default: 30_000,
+    })
+    .option("method", {
+      type: "string",
+      describe: "HTTP method",
+      default: "GET",
+      choices: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+    })
+    .option("header", {
+      type: "string",
+      describe: "HTTP headers in the form {k1:v1,k2:v2}",
+    })
+    .option("body", {
+      type: "string",
+      describe: "Request body (POST/PUT/PATCH)",
+    })
+    .example(
+      "$0 --url https://api.example.com/users",
+      "Trace a simple GET request"
+    )
+    .example(
+      `$0 --url https://api.example.com/users --method POST --body '{"name":"John"}'`,
+      "Trace a POST request with a JSON body"
+    )
+    .example(
+      `$0 --url https://api.example.com/data --header '{Authorization:BearerToken}'`,
+      "Trace a request with custom headers"
+    )
+    .example(
+      `$0 --url https://api.example.com/data --header '{Authorization:BearerToken,X-Env:prod}'`,
+      "Trace a request with multiple headers"
+    )
+    .strict()
+    .help()
+    .parseSync();
 
-  if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
-    console.log(`Usage: tracer --url <url> [--timeout <ms>]
-      Options:
-        --url <url>        URL to trace (required)
-        --timeout <ms>     Request timeout in milliseconds (default: 30000)
-    `);
-    process.exit(0);
-  }
+  const rawUrl = argv.url;
+  const fullUrl =
+    rawUrl.startsWith("http://") || rawUrl.startsWith("https://")
+      ? rawUrl
+      : `http://${rawUrl}`;
 
-  const urlIndex = args.indexOf("--url");
-  if (urlIndex === -1 || !args[urlIndex + 1]) {
-    console.error("Missing or invalid --url argument\n");
-    console.log(`Usage: tracer --url <url> [--timeout <ms>]
-      Options:
-        --url <url>        URL to trace (required)
-        --timeout <ms>     Request timeout in milliseconds (default: 30000)
-    `);
+  try {
+    new URL(fullUrl);
+  } catch {
+    console.error(`Invalid URL: ${rawUrl}`);
     process.exit(1);
   }
 
-  const url = (() => {
-    const raw = args[urlIndex + 1] as string;
-    const full = raw.startsWith("http://") || raw.startsWith("https://") ? raw : `http://${raw}`;
-    try {
-      new URL(full);
-      return full;
-    } catch {
-      console.error(`Invalid URL: ${raw}`);
-      process.exit(1);
-    }
-  })();
+  const headers = parseHeaders(argv.header);
 
-  const timeoutIndex = args.indexOf("--timeout");
-  const timeoutMs = timeoutIndex >= 0 && args[timeoutIndex + 1]
-    ? (() => {
-      const parsed = Number(args[timeoutIndex + 1]);
-      if (isNaN(parsed) || parsed <= 0) {
-        console.error(`Invalid timeout value: ${args[timeoutIndex + 1]}`);
-        process.exit(1);
-      }
-      return parsed;
-    })()
-    : undefined;
+  const method = argv.method as HTTPMethodType;
+  const body = argv.body;
 
-  return { url, timeoutMs };
+  if (body && ["POST", "PUT", "PATCH"].includes(method) && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  return {
+    url: fullUrl,
+    timeoutMs: argv.timeout,
+    method,
+    headers,
+    body,
+  };
 }
 
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
-}
-
-function printResult(result: ITraceResult) {
-  console.log(`\nTracing: ${result.url.href}\n`);
+function printResult(result: ITraceResult, method: HTTPMethodType) {
+  console.log(`\nTracing: ${method} ${result.url.href}\n`);
 
   console.log(`DNS:       ${result.dns.time.toFixed(2)} ms → ${result.dns.address} (${result.dns.family})`);
   console.log(`TCP:       ${result.tcp.time.toFixed(2)} ms → local:${result.tcp.localPort} remote:${result.tcp.remotePort}`);
@@ -81,12 +106,12 @@ function printResult(result: ITraceResult) {
 }
 
 async function main() {
-  const { url, timeoutMs } = parseArgs();
+  const { url, timeoutMs, method, headers, body } = parseArgs();
   const tracer = new RequestTracer();
 
   try {
-    const result = await tracer.trace(url, timeoutMs);
-    printResult(result);
+    const result = await tracer.trace(url, timeoutMs, { method, headers, body });
+    printResult(result, method);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("Trace failed:", message);

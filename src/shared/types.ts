@@ -44,8 +44,8 @@ export interface ITraceResult {
   totalTime: TimingMsType;
 }
 
-export const validHTTPMethods = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
-export type HTTPMethodType = typeof validHTTPMethods[number];
+const HTTPMethods = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
+export type HTTPMethodType = typeof HTTPMethods[number];
 
 export interface IHTTPOptions {
   method?: HTTPMethodType;
