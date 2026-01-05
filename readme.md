@@ -1,48 +1,52 @@
 # Request Tracer
 
-A lightweight Node.js tool to trace network requests and measure timings across **DNS**, **TCP**, **TLS**, and **HTTP**. Can be used as a **CLI tool** or imported as a **package** in your project.
+A lightweight Node.js tool to trace network requests and measure timings across **DNS**, **TCP**, **TLS**, and **HTTP**.  
+Can be used as a **CLI tool** or imported as a **package** in your project.
 
 ---
 
 ## Requirements
 
-- Node.js: 18.0.0 or higher
-- Module System: ESM only ("type": "module" in package.json)
+- **Node.js:** 18.0.0 or higher
+- **Module System:** ESM only (`"type": "module"` in `package.json`)
+
+---
 
 ## Migration from CommonJS
 
-If your project uses CommonJS, you need to migrate to ESM:
+If your project uses CommonJS, you must migrate to ESM:
 
-- Add "type": "module" to your package.json
-- Change require() to import
-- Change module.exports to export
-- Use .js extensions in relative imports
-- Update your tsconfig.json:
+- Add `"type": "module"` to your `package.json`
+- Replace `require()` with `import`
+- Replace `module.exports` with `export`
+- Use explicit `.js` extensions in relative imports
+- Update your `tsconfig.json` accordingly
 
 ---
 
 ## Features
 
-- Trace URL requests end-to-end
+- End-to-end request tracing
 - Measures:
   - DNS resolution
   - TCP connection
   - TLS handshake (HTTPS)
-  - HTTP time-to-first-byte and download
+  - HTTP time-to-first-byte (TTFB) and download time
 - Supports HTTP and HTTPS
 - Optional request timeout
+- Supports custom HTTP methods, headers, and body
 - Exposes detailed `ITraceResult` for programmatic use
-- CLI friendly
+- CLI-friendly and scriptable
 
 ---
 
 ## Installation
 
 ```bash
-# Using npm
+# Global install (CLI)
 npm install -g @david-tobi-peter/request-tracer
 
-# Or local project
+# Or local project dependency
 npm install @david-tobi-peter/request-tracer
 ````
 
@@ -53,17 +57,36 @@ npm install @david-tobi-peter/request-tracer
 ### CLI
 
 ```bash
-# Basic usage
+# Basic GET request
 request-tracer --url https://example.com
 
 # With timeout (ms)
 request-tracer --url https://example.com --timeout 5000
 ```
 
-**Example Output:**
+### POST request with body
+
+```bash
+request-tracer --url https://api.example.com/users \
+  --method POST \
+  --body '{"name":"John"}'
+```
+
+### Custom headers
+
+> **Note:** `--header` values must be quoted to avoid shell brace expansion.
+
+```bash
+request-tracer --url https://api.example.com/data \
+  --header '{Authorization:BearerToken,X-Env:prod}'
+```
+
+---
+
+### Example Output
 
 ```
-Tracing: https://example.com/
+Tracing: GET https://example.com/
 
 DNS:       7.39 ms → 172.217.14.206 (ipv4)
 TCP:       12.54 ms → local:52345 remote:443
@@ -79,7 +102,7 @@ Total time: 159.39 ms
 
 ---
 
-### Programmatic Usage
+## Programmatic Usage
 
 ```ts
 import { RequestTracer, ITraceResult } from "@david-tobi-peter/request-tracer";
@@ -87,16 +110,35 @@ import { RequestTracer, ITraceResult } from "@david-tobi-peter/request-tracer";
 const tracer = new RequestTracer();
 
 async function run() {
-  const result: ITraceResult = await tracer.trace("https://example.com");
-
-  // or const result: ITraceResult = await tracer.trace("https://example.com", 5000);
+  // Simple GET request
+  const result: ITraceResult = await tracer.trace("https://example.com", 5000);
   console.log(result);
+
+  /*
+  // POST request with headers and body
+  const postResult: ITraceResult = await tracer.trace(
+    "https://api.example.com/users",
+    5000,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "BearerToken",
+      },
+      body: JSON.stringify({ name: "John" }),
+    }
+  );
+
+  console.log(postResult);
+  */
 }
 
 run();
 ```
 
-**ITraceResult Shape:**
+---
+
+## `ITraceResult` Shape
 
 ```ts
 interface ITraceResult {
@@ -126,21 +168,22 @@ interface ITraceResult {
 ```
 
 * All times are in **milliseconds**
-* `timeoutMs` defaults to **3000 ms** if not specified
+* `timeoutMs` defaults to **30,000 ms** if not specified
 
 ---
 
-## Options
+## CLI Options
 
-| Option      | Description                     | Default |
-| ----------- | ------------------------------- | ------- |
-| `--url`     | URL to trace (required)         | —       |
-| `--timeout` | Request timeout in milliseconds | 3000    |
+| Option      | Description                                     | Default |
+| ----------- | ----------------------------------------------- | ------- |
+| `--url`     | URL to trace (required)                         | —       |
+| `--timeout` | Request timeout in milliseconds                 | 30000   |
+| `--method`  | HTTP method                                     | GET     |
+| `--header`  | HTTP headers in `{k1:v1,k2:v2}` format (quoted) | —       |
+| `--body`    | Request body (POST / PUT / PATCH)               | —       |
 
 ---
 
 ## License
 
-MIT License – see [LICENSE](./license)
-
----
+MIT License – see [LICENSE](./license.md)
