@@ -1,4 +1,4 @@
-import { IHTTPResult } from "../shared/types.js";
+import { IHTTPOptions, IHTTPResult } from "../shared/types.js";
 import { measureTime } from "../shared/utils.js";
 import http from "http";
 import https from "https";
@@ -10,18 +10,20 @@ export class HTTPClient {
     url: string,
     socket: { socket: net.Socket | tls.TLSSocket },
     timeoutMs: number,
+    options: IHTTPOptions
   ): Promise<IHTTPResult> {
     const target = new URL(url);
     const protocolModule = target.protocol === "https:" ? https : http;
 
     let bytesReceived = 0;
 
-    const options: http.RequestOptions = {
+    const requestOptions: http.RequestOptions = {
       hostname: target.hostname,
       port: target.port || (protocolModule === https ? 443 : 80),
       path: target.pathname + target.search,
-      method: "GET",
+      method: options.method || "GET",
       headers: {
+        ...options.headers,
         "user-agent": "RequestTracer/1.0",
       },
       createConnection: () => socket.socket,
@@ -30,7 +32,7 @@ export class HTTPClient {
 
     const { result: ttfbRes, timeMs: ttfb } = await measureTime(() =>
       new Promise<http.IncomingMessage>((resolve, reject) => {
-        const req = protocolModule.request(options, resolve);
+        const req = protocolModule.request(requestOptions, resolve);
 
         req.on("error", (err) => reject(new Error(`HTTP request failed: ${err.message}`)));
 
@@ -38,6 +40,10 @@ export class HTTPClient {
           req.destroy();
           reject(new Error("HTTP request timeout"));
         });
+
+        if (options.body) {
+          req.write(options.body);
+        }
 
         req.end();
       })

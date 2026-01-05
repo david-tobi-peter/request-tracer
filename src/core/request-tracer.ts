@@ -4,7 +4,7 @@ import { TLSHandShaker } from "./tls.js";
 import { HTTPClient } from "./http.js";
 import type net from "net";
 import type tls from "tls";
-import type { ITraceResult } from "../shared/types.js";
+import type { IHTTPOptions, ITraceResult } from "../shared/types.js";
 
 export class RequestTracer {
   private dns = new DNSResolver();
@@ -14,7 +14,8 @@ export class RequestTracer {
 
   async trace(
     url: string,
-    timeoutMs: number = 3_000
+    timeoutMs: number = 3_000,
+    httpOptions: IHTTPOptions = {}
   ): Promise<ITraceResult> {
     const target = new URL(url);
 
@@ -23,46 +24,47 @@ export class RequestTracer {
       return target.protocol === "https:" ? 443 : 80;
     })();
 
-    const IDNSResult = await this.dns.resolve(target.hostname);
+    const dnsResult = await this.dns.resolve(target.hostname);
 
-    const ITCPResult = await this.tcp.connect(
-      IDNSResult.address,
+    const tcpResult = await this.tcp.connect(
+      dnsResult.address,
       port,
       timeoutMs
     );
 
-    let activeSocket: net.Socket | tls.TLSSocket = ITCPResult.socket;
-    let ITLSResult: ITraceResult["tls"];
+    let activeSocket: net.Socket | tls.TLSSocket = tcpResult.socket;
+    let tlsResult: ITraceResult["tls"];
 
     if (target.protocol === "https:") {
-      ITLSResult = await this.tls.handshake(
-        { socket: ITCPResult.socket },
+      tlsResult = await this.tls.handshake(
+        { socket: tcpResult.socket },
         target.hostname,
         timeoutMs
       );
 
-      activeSocket = ITLSResult.socket;
+      activeSocket = tlsResult.socket;
     }
 
-    const IHTTPResult = await this.http.request(
+    const httpResult = await this.http.request(
       target.href,
       { socket: activeSocket },
-      timeoutMs
+      timeoutMs,
+      httpOptions
     );
 
     const totalTime =
-      IDNSResult.time +
-      ITCPResult.time +
-      (ITLSResult?.time ?? 0) +
-      IHTTPResult.ttfb +
-      IHTTPResult.download;
+      dnsResult.time +
+      tcpResult.time +
+      (tlsResult?.time ?? 0) +
+      httpResult.ttfb +
+      httpResult.download;
 
     return {
       url: target,
-      dns: IDNSResult,
-      tcp: ITCPResult,
-      ...(ITLSResult ? { tls: ITLSResult } : {}),
-      http: IHTTPResult,
+      dns: dnsResult,
+      tcp: tcpResult,
+      ...(tlsResult ? { tls: tlsResult } : {}),
+      http: httpResult,
       totalTime,
     };
   }

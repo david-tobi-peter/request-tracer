@@ -43,3 +43,20 @@ export interface ITraceResult {
   http: IHTTPResult;
   totalTime: TimingMsType;
 }
+
+export const validHTTPMethods = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
+export type HTTPMethodType = typeof validHTTPMethods[number];
+
+export interface IHTTPOptions {
+  method?: HTTPMethodType;
+  headers?: Record<string, string>;
+  body?: string;
+};
+
+export interface IParsedArgs {
+  url: string;
+  timeoutMs: number | undefined;
+  method: HTTPMethodType;
+  headers: Record<string, string>;
+  body: string | undefined;
+}
